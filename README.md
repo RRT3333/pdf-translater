@@ -125,16 +125,16 @@ python translate.py -i ./目論見書.pdf -o ./output/
 ============================================================
 ```
 
-### 예시 2: 폴더 일괄 번역
+### 예시 2: 폴더 재귀 일괄 번역 (일본어 → 한국어)
 
 ```bash
-python translate.py -i ./documents/ -o ./translated/ --batch
+python translate.py -i ./docs/ -o ./output/ --recursive -s ja -t ko
 ```
 
-### 예시 3: 영어 → 한국어 번역
+### 예시 3: 절대 경로로 특정 파일 번역
 
 ```bash
-python translate.py -i ./english_doc.pdf -s en -t ko
+python translate.py -i "C:\Tao_Programming\translate\docs\キャピタル世界株式ファンド (分配金再投資)\jp-ark-gef.pdf"
 ```
 
 ### 예시 4: 사용 현황 조회
