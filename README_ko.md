@@ -64,7 +64,7 @@ GOOGLE_CLOUD_PROJECT=your-project-id
 ### 기본 사용법
 
 ```bash
-# 단일 파일 번역
+# 단일 파일 번역 (기본값: 일본어 → 한국어)
 python translate.py -i ./document.pdf
 
 # 출력 폴더 지정
@@ -133,10 +133,10 @@ python translate.py -i ./目論見書.pdf -o ./output/
 python translate.py -i ./docs/ -o ./output/ --recursive -s ja -t ko
 ```
 
-### 예시 3: 절대 경로로 특정 파일 번역
+### 예시 3: 하위 폴더의 파일 번역 (기본값 사용: 일본어 → 한국어)
 
 ```bash
-python translate.py -i "C:\Tao_Programming\translate\docs\キャピタル世界株式ファンド (分配金再投資)\jp-ark-gef.pdf"
+python translate.py -i "./docs/キャピタル世界株式ファンド (分配金再投資)/jp-ark-gef.pdf"
 ```
 
 ### 예시 4: 사용 현황 조회

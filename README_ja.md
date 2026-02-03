@@ -64,7 +64,7 @@ GOOGLE_CLOUD_PROJECT=your-project-id
 ### 基本的な使い方
 
 ```bash
-# 単一ファイルの翻訳
+# 単一ファイルの翻訳（デフォルト：日本語 → 韓国語）
 python translate.py -i ./document.pdf
 
 # 出力フォルダを指定
@@ -133,10 +133,10 @@ python translate.py -i ./目論見書.pdf -o ./output/
 python translate.py -i ./docs/ -o ./output/ --recursive -s ja -t ko
 ```
 
-### 例3: 絶対パスで特定のファイルを翻訳
+### 例3: サブフォルダ内のファイルを翻訳（デフォルト使用：日本語 → 韓国語）
 
 ```bash
-python translate.py -i "C:\Tao_Programming\translate\docs\キャピタル世界株式ファンド (分配金再投資)\jp-ark-gef.pdf"
+python translate.py -i "./docs/キャピタル世界株式ファンド (分配金再投資)/jp-ark-gef.pdf"
 ```
 
 ### 例4: 使用統計の確認

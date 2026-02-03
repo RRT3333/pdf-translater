@@ -64,7 +64,7 @@ GOOGLE_CLOUD_PROJECT=your-project-id
 ### Basic Usage
 
 ```bash
-# Translate a single file
+# Translate a single file (default: Japanese → Korean)
 python translate.py -i ./document.pdf
 
 # Specify output folder
@@ -133,10 +133,10 @@ Output:
 python translate.py -i ./docs/ -o ./output/ --recursive -s ja -t ko
 ```
 
-### Example 3: Translate Specific File with Absolute Path
+### Example 3: Translate File in Subfolder (uses default: Japanese → Korean)
 
 ```bash
-python translate.py -i "C:\Tao_Programming\translate\docs\キャピタル世界株式ファンド (分配金再投資)\jp-ark-gef.pdf"
+python translate.py -i "./docs/キャピタル世界株式ファンド (分配金再投資)/jp-ark-gef.pdf"
 ```
 
 ### Example 4: Check Usage Statistics
