@@ -1,4 +1,4 @@
-"""유틸리티 함수들"""
+"""Utility functions"""
 
 import os
 from typing import List, Tuple
@@ -9,33 +9,33 @@ def save_translated_document(
     output_path: str
 ) -> None:
     """
-    번역된 문서를 파일로 저장
+    Save translated document to file
     
     Args:
-        document_content: 번역된 문서의 바이너리 데이터
-        output_path: 출력 파일 경로
+        document_content: Binary data of translated document
+        output_path: Output file path
     """
     try:
-        # 출력 디렉토리 생성
+        # Create output directory
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         
-        # 파일 저장
+        # Save file
         with open(output_path, 'wb') as f:
             f.write(document_content)
             
     except Exception as e:
-        raise Exception(f"문서 저장 오류: {str(e)}")
+        raise Exception(f"Document save error: {str(e)}")
 
 
 def get_pdf_files(directory: str) -> List[str]:
     """
-    디렉토리에서 PDF 파일 목록 가져오기 (하위 폴더 제외)
+    Get list of PDF files from directory (excluding subfolders)
     
     Args:
-        directory: 검색할 디렉토리 경로
+        directory: Directory path to search
         
     Returns:
-        PDF 파일 경로 리스트
+        List of PDF file paths
     """
     pdf_files = []
     
@@ -48,13 +48,13 @@ def get_pdf_files(directory: str) -> List[str]:
 
 def get_pdf_files_recursive(directory: str) -> List[Tuple[str, str]]:
     """
-    디렉토리에서 재귀적으로 PDF 파일 찾기
+    Recursively find PDF files in directory
     
     Args:
-        directory: 검색할 루트 디렉토리 경로
+        directory: Root directory path to search
         
     Returns:
-        (절대경로, 상대경로) 튜플 리스트
+        List of (absolute_path, relative_path) tuples
     """
     pdf_files = []
     
@@ -68,53 +68,15 @@ def get_pdf_files_recursive(directory: str) -> List[Tuple[str, str]]:
     return sorted(pdf_files, key=lambda x: x[1])
 
 
-def get_output_path_with_structure(
-    input_path: str,
-    input_base_dir: str,
-    output_base_dir: str,
-    target_lang: str
-) -> str:
-    """
-    입력 파일의 폴더 구조를 유지하면서 출력 경로 생성
-    
-    Args:
-        input_path: 입력 파일 절대 경로
-        input_base_dir: 입력 기본 디렉토리
-        output_base_dir: 출력 기본 디렉토리
-        target_lang: 도착어 코드
-        
-    Returns:
-        출력 파일 경로
-    """
-    # 상대 경로 추출
-    rel_path = os.path.relpath(input_path, input_base_dir)
-    
-    # 파일명과 디렉토리 분리
-    rel_dir = os.path.dirname(rel_path)
-    filename = os.path.basename(rel_path)
-    
-    # 파일명에 언어 코드 추가
-    name_without_ext = os.path.splitext(filename)[0]
-    new_filename = f"{name_without_ext}_{target_lang}.pdf"
-    
-    # 출력 경로 생성
-    if rel_dir:
-        output_path = os.path.join(output_base_dir, rel_dir, new_filename)
-    else:
-        output_path = os.path.join(output_base_dir, new_filename)
-    
-    return output_path
-
-
 def format_file_size(size_bytes: int) -> str:
     """
-    파일 크기를 읽기 쉬운 형식으로 변환
+    Convert file size to human-readable format
     
     Args:
-        size_bytes: 바이트 단위 크기
+        size_bytes: Size in bytes
         
     Returns:
-        포맷된 크기 문자열
+        Formatted size string
     """
     for unit in ['B', 'KB', 'MB', 'GB']:
         if size_bytes < 1024.0:
