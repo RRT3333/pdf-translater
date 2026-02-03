@@ -2,13 +2,11 @@
 
 This document outlines security best practices for committing code to version control and deploying the PDF translation CLI.
 
----
 
 ## Overview
 
 This project handles sensitive information including Google Cloud credentials, API keys, and potentially confidential documents. Proper security measures are essential to prevent unauthorized access and data exposure.
 
----
 
 ## Critical Files to Exclude
 
@@ -59,7 +57,6 @@ PDF files may contain:
 
 These should remain local only.
 
----
 
 ## Safe Files to Commit
 
@@ -69,8 +66,6 @@ The following files contain no sensitive information and should be included in v
 - Configuration templates: `.env.example`, `requirements.txt`
 - Documentation: `README.md`, `TECHNICAL_SPEC.md`, `RULES.md`, `SKILLS.md`
 - Git configuration: `.gitignore`
-
----
 
 ## Pre-Commit Checklist
 
@@ -108,7 +103,6 @@ git diff --cached --name-only
 
 Confirm that only appropriate files are staged for commit.
 
----
 
 ## Secure Coding Patterns
 
@@ -132,7 +126,6 @@ CREDENTIALS = "./my-secret-key.json"
 API_KEY = "AIzaSyABC123..."
 ```
 
----
 
 ## Incident Response
 
@@ -175,7 +168,6 @@ git commit -m "Your commit message"
    git reset --hard origin/main
    ```
 
----
 
 ## Additional Security Measures
 
@@ -227,7 +219,6 @@ For public repositories, enable GitHub's secret scanning:
 2. Go to Code security and analysis
 3. Enable "Secret scanning" and "Push protection"
 
----
 
 ## Current Security Status
 
@@ -241,7 +232,6 @@ This project implements the following security measures:
 
 **Status**: Ready for version control
 
----
 
 ## Quick Reference
 
@@ -262,7 +252,6 @@ git diff --cached | grep -i "password\|secret\|key"
 - Generate new credentials
 - Update local `.env` file
 
----
 
 ## Additional Resources
 
