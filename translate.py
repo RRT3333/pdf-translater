@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PDF 번역 CLI 프로그램 - Google Cloud Translation API v3 Document Translation"""
+"""PDF Translation CLI Program - Google Cloud Translation API v3 Document Translation"""
 
 import os
 import sys
@@ -12,29 +12,29 @@ from datetime import datetime
 from translator import TranslationClient, save_translated_document, UsageTracker
 from translator.utils import get_pdf_files, get_pdf_files_recursive, get_output_path_with_structure, format_file_size
 
-# .env 파일 로드
+# Load .env file
 load_dotenv()
 
 
 def validate_credentials():
-    """Google Cloud 인증 정보 확인"""
+    """Validate Google Cloud credentials"""
     credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     
     if not credentials_path:
-        click.echo("❌ 오류: GOOGLE_APPLICATION_CREDENTIALS 환경 변수가 설정되지 않았습니다.", err=True)
-        click.echo("💡 .env 파일에 다음을 추가하세요:", err=True)
+        click.echo("❌ Error: GOOGLE_APPLICATION_CREDENTIALS environment variable is not set.", err=True)
+        click.echo("💡 Add the following to your .env file:", err=True)
         click.echo("   GOOGLE_APPLICATION_CREDENTIALS=./credentials.json", err=True)
         sys.exit(1)
     
     if not os.path.exists(credentials_path):
-        click.echo(f"❌ 오류: 인증 파일을 찾을 수 없습니다: {credentials_path}", err=True)
-        click.echo("💡 Google Cloud Console에서 서비스 계정 키를 다운로드하세요.", err=True)
+        click.echo(f"❌ Error: Credential file not found: {credentials_path}", err=True)
+        click.echo("💡 Download the service account key from Google Cloud Console.", err=True)
         sys.exit(1)
     
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
     if not project_id:
-        click.echo("❌ 오류: GOOGLE_CLOUD_PROJECT 환경 변수가 설정되지 않았습니다.", err=True)
-        click.echo("💡 .env 파일에 다음을 추가하세요:", err=True)
+        click.echo("❌ Error: GOOGLE_CLOUD_PROJECT environment variable is not set.", err=True)
+        click.echo("💡 Add the following to your .env file:", err=True)
         click.echo("   GOOGLE_CLOUD_PROJECT=your-project-id", err=True)
         sys.exit(1)
 
@@ -48,22 +48,22 @@ def translate_single_file(
     tracker: UsageTracker = None,
     show_relative_path: str = None
 ):
-    """단일 PDF 파일 번역 (Document Translation 사용)"""
+    """Translate a single PDF file (using Document Translation)"""
     try:
         filename = os.path.basename(input_path)
         display_path = show_relative_path if show_relative_path else filename
         click.echo(f"\n📄 {display_path}")
         
         file_size = os.path.getsize(input_path)
-        click.echo(f"   📊 파일 크기: {format_file_size(file_size)}")
+        click.echo(f"   📊 File size: {format_file_size(file_size)}")
         
-        # 파일 크기 제한 확인 (10MB)
+        # Check file size limit (10MB)
         max_size = 10 * 1024 * 1024  # 10MB
         if file_size > max_size:
-            click.echo(f"   ⚠️  경고: 파일이 10MB를 초과합니다. 처리 시간이 오래 걸릴 수 있습니다.", err=True)
+            click.echo(f"   ⚠️  Warning: File exceeds 10MB. Processing may take longer.", err=True)
         
-        # PDF 문서 번역 (API v3 Document Translation)
-        click.echo("   🌐 문서 번역 중...", nl=False)
+        # Translate PDF document (API v3 Document Translation)
+        click.echo("   🌐 Translating document...", nl=False)
         
         result = client.translate_document(
             file_path=input_path,
@@ -74,18 +74,18 @@ def translate_single_file(
         
         click.echo(" ✓")
         
-        # 번역된 PDF 저장
-        click.echo("   💾 파일 저장 중...", nl=False)
+        # Save translated PDF
+        click.echo("   💾 Saving file...", nl=False)
         save_translated_document(result["document_content"], output_path)
         
         output_size = format_file_size(os.path.getsize(output_path))
         click.echo(f" ✓ ({output_size})")
         click.echo(f"   → {output_path}")
         
-        # 사용 현황 추적
+        # Track usage
         if tracker:
             estimated_cost = tracker.calculate_cost(file_size)
-            click.echo(f"   💰 예상 비용: ${estimated_cost:.2f}")
+            click.echo(f"   💰 Estimated cost: ${estimated_cost:.2f}")
             tracker.add_translation(
                 input_file=input_path,
                 output_file=output_path,
@@ -94,10 +94,10 @@ def translate_single_file(
                 file_size_bytes=file_size
             )
         
-        return True, 1, file_size  # 성공, 1개 파일, 파일 크기
+        return True, 1, file_size  # success, 1 file, file size
         
     except Exception as e:
-        click.echo(f"\n❌ 오류: {str(e)}", err=True)
+        click.echo(f"\n❌ Error: {str(e)}", err=True)
         return False, 0, 0
 
 
@@ -106,66 +106,66 @@ def translate_single_file(
 @click.option(
     '--input', '-i',
     type=click.Path(exists=True),
-    help='입력 PDF 파일 또는 폴더 경로'
+    help='Input PDF file or folder path'
 )
 @click.option(
     '--output', '-o',
     default='./output',
     type=click.Path(),
-    help='출력 폴더 경로 (기본값: ./output)'
+    help='Output folder path (default: ./output)'
 )
 @click.option(
     '--source', '-s',
     default='ja',
-    help='출발어 코드 (기본값: ja, 빈 문자열로 자동 감지 가능)'
+    help='Source language code (default: ja, empty string for auto-detection)'
 )
 @click.option(
     '--target', '-t',
     default='ko',
-    help='도착어 코드 (기본값: ko)'
+    help='Target language code (default: ko)'
 )
 @click.option(
     '--batch', '-b',
     is_flag=True,
-    help='폴더 일괄 처리 모드'
+    help='Batch processing mode for folders'
 )
 @click.option(
     '--recursive', '-r',
     is_flag=True,
-    help='하위 폴더 포함 재귀 처리 (폴더 구조 유지)'
+    help='Recursive processing including subfolders (preserves folder structure)'
 )
 def cli(ctx, input, output, source, target, batch, recursive):
-    """PDF 번역 CLI 프로그램 (Google Cloud Translation API v3 Document Translation)
+    """PDF Translation CLI Program (Google Cloud Translation API v3 Document Translation)
     
-    PDF 문서를 통째로 번역합니다. 레이아웃과 포맷을 유지하며, 텍스트 추출 없이 문서 자체를 번역합니다.
+    Translates entire PDF documents while preserving layout and format, without text extraction.
     
-    예시:
+    Examples:
     
-        # 단일 파일 번역
+        # Translate a single file
         python translate.py -i ./document.pdf -o ./output/
         
-        # 폴더 일괄 번역
+        # Batch translate folder
         python translate.py -i ./docs/ -o ./output/ --batch
         
-        # 하위 폴더 포함 재귀 번역 (폴더 구조 유지)
+        # Recursive translation including subfolders (preserves folder structure)
         python translate.py -i ./docs/ -o ./output/ --recursive
         
-        # 언어 지정
+        # Specify languages
         python translate.py -i ./docs/ -s en -t ko --batch
         
-        # 자동 언어 감지 (source를 빈 문자열로)
+        # Auto language detection (empty string for source)
         python translate.py -i ./document.pdf -s "" -t ko
         
-        # 사용 현황 조회
+        # View usage statistics
         python translate.py stats
         
-        # 상세 사용 현황 조회
+        # View detailed usage statistics
         python translate.py stats --detail
     """
     if ctx.invoked_subcommand is None:
         if not input:
-            click.echo("❌ 오류: --input 옵션이 필요합니다.", err=True)
-            click.echo("사용법: python translate.py --help", err=True)
+            click.echo("❌ Error: --input option is required.", err=True)
+            click.echo("Usage: python translate.py --help", err=True)
             sys.exit(1)
         
         ctx.invoke(translate_command, input=input, output=output, source=source, target=target, batch=batch, recursive=recursive)
@@ -179,47 +179,47 @@ def cli(ctx, input, output, source, target, batch, recursive):
 @click.option('--batch', '-b', is_flag=True)
 @click.option('--recursive', '-r', is_flag=True)
 def translate_command(input: str, output: str, source: str, target: str, batch: bool, recursive: bool):
-    """PDF 번역 CLI 프로그램 (Google Cloud Translation API v3 Document Translation)
+    """PDF Translation CLI Program (Google Cloud Translation API v3 Document Translation)
     
-    PDF 문서를 통째로 번역합니다. 레이아웃과 포맷을 유지하며, 텍스트 추출 없이 문서 자체를 번역합니다.
+    Translates entire PDF documents while preserving layout and format, without text extraction.
     
-    예시:
+    Examples:
     
-        # 단일 파일 번역
+        # Translate a single file
         python translate.py -i ./document.pdf -o ./output/
         
-        # 폴더 일괄 번역
+        # Batch translate folder
         python translate.py -i ./docs/ -o ./output/ --batch
         
-        # 언어 지정
+        # Specify languages
         python translate.py -i ./docs/ -s en -t ko --batch
         
-        # 자동 언어 감지 (source를 빈 문자열로)
+        # Auto language detection (empty string for source)
         python translate.py -i ./document.pdf -s "" -t ko
     """
-    # 인증 정보 확인
+    # Validate credentials
     validate_credentials()
     
-    # 출력 디렉토리 생성
+    # Create output directory
     os.makedirs(output, exist_ok=True)
     
-    # Translation 클라이언트 초기화
+    # Initialize Translation client
     try:
         client = TranslationClient()
     except Exception as e:
-        click.echo(f"❌ 오류: Translation API 클라이언트 초기화 실패: {str(e)}", err=True)
+        click.echo(f"❌ Error: Failed to initialize Translation API client: {str(e)}", err=True)
         sys.exit(1)
     
-    # 입력 파일 목록 가져오기
+    # Get input file list
     if recursive:
-        # 재귀 모드: 하위 폴더 포함, 폴더 구조 유지
+        # Recursive mode: includes subfolders, preserves folder structure
         if not os.path.isdir(input):
-            click.echo("❌ 오류: --recursive 옵션은 폴더 경로와 함께 사용해야 합니다.", err=True)
+            click.echo("❌ Error: --recursive option must be used with a folder path.", err=True)
             sys.exit(1)
         
         pdf_files_with_rel = get_pdf_files_recursive(input)
         if not pdf_files_with_rel:
-            click.echo(f"❌ 오류: {input} 폴더에 PDF 파일이 없습니다.", err=True)
+            click.echo(f"❌ Error: No PDF files found in {input} folder.", err=True)
             sys.exit(1)
         
         pdf_files = [abs_path for abs_path, rel_path in pdf_files_with_rel]
@@ -227,27 +227,27 @@ def translate_command(input: str, output: str, source: str, target: str, batch: 
         input_base_dir = input
         
     elif batch or os.path.isdir(input):
-        # 배치 모드: 현재 폴더만
+        # Batch mode: current folder only
         if not os.path.isdir(input):
-            click.echo("❌ 오류: --batch 옵션은 폴더 경로와 함께 사용해야 합니다.", err=True)
+            click.echo("❌ Error: --batch option must be used with a folder path.", err=True)
             sys.exit(1)
         pdf_files = get_pdf_files(input)
         if not pdf_files:
-            click.echo(f"❌ 오류: {input} 폴더에 PDF 파일이 없습니다.", err=True)
+            click.echo(f"❌ Error: No PDF files found in {input} folder.", err=True)
             sys.exit(1)
         is_recursive_mode = False
         input_base_dir = None
         
     else:
-        # 단일 파일 모드
+        # Single file mode
         if not input.lower().endswith('.pdf'):
-            click.echo("❌ 오류: PDF 파일만 지원합니다.", err=True)
+            click.echo("❌ Error: Only PDF files are supported.", err=True)
             sys.exit(1)
         pdf_files = [input]
         is_recursive_mode = False
         input_base_dir = None
     
-    # 언어 이름 매핑
+    # Language name mapping
     lang_names = {
         'ja': '日本語',
         'ko': '한국어',
@@ -261,21 +261,21 @@ def translate_command(input: str, output: str, source: str, target: str, batch: 
     source_name = lang_names.get(source, source.upper())
     target_name = lang_names.get(target, target.upper())
     
-    # 시작 메시지
+    # Start message
     click.echo("\n" + "="*60)
     click.echo("🌏 PDF Translator (Document Translation API)")
     click.echo("="*60)
-    click.echo(f"📁 입력: {input} ({len(pdf_files)}개 파일)")
-    click.echo(f"📂 출력: {output}")
+    click.echo(f"📁 Input: {input} ({len(pdf_files)} files)")
+    click.echo(f"📂 Output: {output}")
     if is_recursive_mode:
-        click.echo("🔄 모드: 재귀 (폴더 구조 유지)")
-    click.echo(f"🌐 번역: {source_name} → {target_name}")
+        click.echo("🔄 Mode: Recursive (preserves folder structure)")
+    click.echo(f"🌐 Translation: {source_name} → {target_name}")
     click.echo("="*60)
     
-    # 사용 현황 추적기 초기화
+    # Initialize usage tracker
     tracker = UsageTracker()
     
-    # 파일 번역
+    # Translate files
     total_files_processed = 0
     success_count = 0
     total_cost = 0.0
@@ -283,15 +283,15 @@ def translate_command(input: str, output: str, source: str, target: str, batch: 
     for idx, pdf_file in enumerate(pdf_files, 1):
         click.echo(f"\n[{idx}/{len(pdf_files)}]", nl=False)
         
-        # 출력 경로 결정
+        # Determine output path
         if is_recursive_mode:
-            # 재귀 모드: 폴더 구조 유지
+            # Recursive mode: preserve folder structure
             output_path = get_output_path_with_structure(
                 pdf_file, input_base_dir, output, target
             )
             rel_path = os.path.relpath(pdf_file, input_base_dir)
         else:
-            # 일반 모드: 출력 폴더에 직접 저장
+            # Normal mode: save directly to output folder
             filename = os.path.basename(pdf_file)
             name_without_ext = os.path.splitext(filename)[0]
             output_filename = f"{name_without_ext}_{target}.pdf"
@@ -306,19 +306,19 @@ def translate_command(input: str, output: str, source: str, target: str, batch: 
             total_files_processed += files
             total_cost += tracker.calculate_cost(file_size)
     
-    # 완료 메시지
+    # Completion message
     click.echo("\n" + "="*60)
     if success_count == len(pdf_files):
-        click.echo(f"✅ 완료! 총 {success_count}개 파일 번역 성공")
+        click.echo(f"✅ Complete! Successfully translated {success_count} files")
     else:
-        click.echo(f"⚠️  완료: {success_count}/{len(pdf_files)}개 파일 성공")
+        click.echo(f"⚠️  Complete: {success_count}/{len(pdf_files)} files succeeded")
     
     if total_cost > 0:
-        click.echo(f"💰 이번 작업 예상 비용: ${total_cost:.2f}")
+        click.echo(f"💰 Estimated cost for this operation: ${total_cost:.2f}")
     
-    # 누적 통계
+    # Cumulative statistics
     summary = tracker.get_summary()
-    click.echo(f"📊 누적: {summary['total_files']}개 파일 | ${summary['total_cost_usd']:.2f}")
+    click.echo(f"📊 Cumulative: {summary['total_files']} files | ${summary['total_cost_usd']:.2f}")
     click.echo("="*60 + "\n")
 
 
@@ -326,92 +326,92 @@ def translate_command(input: str, output: str, source: str, target: str, batch: 
 @click.option(
     '--detail', '-d',
     is_flag=True,
-    help='상세 내역 표시'
+    help='Show detailed history'
 )
 @click.option(
     '--month',
     type=int,
-    help='특정 월의 통계 조회 (1-12)'
+    help='View statistics for a specific month (1-12)'
 )
 @click.option(
     '--year',
     type=int,
-    help='특정 년도 지정 (기본값: 현재 년도)'
+    help='Specify year (default: current year)'
 )
 @click.option(
     '--clear',
     is_flag=True,
-    help='사용 기록 초기화 (주의: 복구 불가)'
+    help='Clear usage history (warning: irreversible)'
 )
 def stats(detail: bool, month: int, year: int, clear: bool):
-    """API 사용 현황 및 비용 통계 조회
+    """View API usage statistics and cost
     
-    예시:
+    Examples:
     
-        # 전체 요약 보기
+        # View summary
         python translate.py stats
         
-        # 상세 내역 보기 (최근 10건)
+        # View detailed history (last 10 records)
         python translate.py stats --detail
         
-        # 이번 달 통계
+        # This month's statistics
         python translate.py stats --month 2
         
-        # 특정 년월 통계
+        # Specific year-month statistics
         python translate.py stats --month 2 --year 2026
         
-        # 사용 기록 초기화
+        # Clear usage history
         python translate.py stats --clear
     """
     tracker = UsageTracker()
     
-    # 기록 초기화
+    # Clear history
     if clear:
-        click.confirm('⚠️  모든 사용 기록을 삭제하시겠습니까?', abort=True)
+        click.confirm('⚠️  Are you sure you want to delete all usage history?', abort=True)
         tracker.clear_history()
-        click.echo("✅ 사용 기록이 초기화되었습니다.")
+        click.echo("✅ Usage history has been cleared.")
         return
     
-    # 월별 통계
+    # Monthly statistics
     if month:
         if not year:
             year = datetime.now().year
         
         if not (1 <= month <= 12):
-            click.echo("❌ 오류: 월은 1-12 사이의 값이어야 합니다.", err=True)
+            click.echo("❌ Error: Month must be between 1 and 12.", err=True)
             sys.exit(1)
         
         monthly = tracker.get_monthly_summary(year, month)
         
         click.echo("\n" + "="*60)
-        click.echo(f"📅 {year}년 {month}월 사용 현황")
+        click.echo(f"📅 Usage Statistics for {year}-{month:02d}")
         click.echo("="*60)
-        click.echo(f"📄 번역 파일: {monthly['files']}개")
-        click.echo(f"📊 총 크기: {monthly['size_mb']:.2f} MB")
-        click.echo(f"💰 예상 비용: ${monthly['cost_usd']:.2f} USD")
+        click.echo(f"📄 Files translated: {monthly['files']}")
+        click.echo(f"📊 Total size: {monthly['size_mb']:.2f} MB")
+        click.echo(f"💰 Estimated cost: ${monthly['cost_usd']:.2f} USD")
         click.echo("="*60 + "\n")
         return
     
-    # 전체 요약
+    # Overall summary
     summary = tracker.get_summary()
     
     click.echo("\n" + "="*60)
-    click.echo("📊 PDF Translator - 사용 현황")
+    click.echo("📊 PDF Translator - Usage Statistics")
     click.echo("="*60)
-    click.echo(f"📄 총 번역 파일: {summary['total_files']}개")
-    click.echo(f"📦 총 처리 용량: {summary['total_size_mb']:.2f} MB")
-    click.echo(f"💰 누적 예상 비용: ${summary['total_cost_usd']:.2f} USD")
+    click.echo(f"📄 Total files translated: {summary['total_files']}")
+    click.echo(f"📦 Total data processed: {summary['total_size_mb']:.2f} MB")
+    click.echo(f"💰 Cumulative estimated cost: ${summary['total_cost_usd']:.2f} USD")
     click.echo("="*60)
     
-    # 상세 내역
+    # Detailed history
     if detail:
         translations = tracker.get_recent_translations(limit=10)
         
         if not translations:
-            click.echo("\n📭 번역 기록이 없습니다.\n")
+            click.echo("\n📭 No translation history found.\n")
             return
         
-        click.echo(f"\n📋 최근 번역 기록 (최대 10건):\n")
+        click.echo(f"\n📋 Recent Translation History (max 10 records):\n")
         
         for i, record in enumerate(reversed(translations), 1):
             timestamp = datetime.fromisoformat(record['timestamp'])
@@ -424,7 +424,7 @@ def stats(detail: bool, month: int, year: int, clear: bool):
             click.echo(f"   → {record['output_file']}")
             click.echo()
     else:
-        click.echo("\n💡 상세 내역을 보려면: python translate.py stats --detail\n")
+        click.echo("\n💡 For detailed history: python translate.py stats --detail\n")
 
 
 if __name__ == '__main__':

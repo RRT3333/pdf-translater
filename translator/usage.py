@@ -1,4 +1,4 @@
-"""API 사용 현황 추적 및 비용 계산"""
+"""API usage tracking and cost calculation"""
 
 import json
 import os
@@ -7,20 +7,20 @@ from typing import Dict, List, Optional
 
 
 class UsageTracker:
-    """API 사용 현황 추적기"""
+    """API usage tracker"""
     
     def __init__(self, usage_file: str = "usage_history.json"):
         """
-        사용 현황 추적기 초기화
+        Initialize usage tracker
         
         Args:
-            usage_file: 사용 현황을 저장할 JSON 파일 경로
+            usage_file: JSON file path to save usage history
         """
         self.usage_file = usage_file
         self.data = self._load_data()
     
     def _load_data(self) -> Dict:
-        """저장된 사용 현황 데이터 로드"""
+        """Load saved usage history data"""
         if os.path.exists(self.usage_file):
             try:
                 with open(self.usage_file, 'r', encoding='utf-8') as f:
@@ -36,28 +36,28 @@ class UsageTracker:
         }
     
     def _save_data(self):
-        """사용 현황 데이터를 파일에 저장"""
+        """Save usage history data to file"""
         try:
             with open(self.usage_file, 'w', encoding='utf-8') as f:
                 json.dump(self.data, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            print(f"⚠️ 사용 현황 저장 실패: {str(e)}")
+            print(f"⚠️ Failed to save usage history: {str(e)}")
     
     def calculate_cost(self, file_size_bytes: int) -> float:
         """
-        파일 크기 기반 비용 계산
+        Calculate cost based on file size
         
-        Document Translation 비용:
-        - 페이지당 $0.075 (최초 500페이지/월)
-        - 페이지당 $0.045 (500페이지 초과분)
+        Document Translation cost:
+        - $0.075 per page (first 500 pages/month)
+        - $0.045 per page (over 500 pages)
         
-        대략적 추정: 1MB = 약 10페이지
+        Rough estimate: 1MB = approximately 10 pages
         
         Args:
-            file_size_bytes: 파일 크기 (바이트)
+            file_size_bytes: File size (bytes)
             
         Returns:
-            예상 비용 (USD)
+            Estimated cost (USD)
         """
         file_size_mb = file_size_bytes / (1024 * 1024)
         estimated_pages = max(1, int(file_size_mb * 10))  # 1MB ≈ 10페이지
@@ -75,14 +75,14 @@ class UsageTracker:
         file_size_bytes: int
     ):
         """
-        번역 기록 추가
+        Add translation record
         
         Args:
-            input_file: 입력 파일명
-            output_file: 출력 파일명
-            source_lang: 출발어 코드
-            target_lang: 도착어 코드
-            file_size_bytes: 파일 크기 (바이트)
+            input_file: Input file name
+            output_file: Output file name
+            source_lang: Source language code
+            target_lang: Target language code
+            file_size_bytes: File size (bytes)
         """
         file_size_mb = round(file_size_bytes / (1024 * 1024), 2)
         cost = self.calculate_cost(file_size_bytes)
@@ -105,7 +105,7 @@ class UsageTracker:
         self._save_data()
     
     def get_summary(self) -> Dict:
-        """전체 사용 현황 요약"""
+        """Overall usage summary"""
         return {
             "total_files": self.data["total_files"],
             "total_cost_usd": self.data["total_cost_usd"],
@@ -114,16 +114,16 @@ class UsageTracker:
         }
     
     def get_recent_translations(self, limit: int = 10) -> List[Dict]:
-        """최근 번역 기록 조회"""
+        """View recent translation records"""
         translations = self.data["translations"]
         return translations[-limit:] if len(translations) > limit else translations
     
     def get_all_translations(self) -> List[Dict]:
-        """모든 번역 기록 조회"""
+        """View all translation records"""
         return self.data["translations"]
     
     def get_monthly_summary(self, year: int, month: int) -> Dict:
-        """월별 사용 현황 요약"""
+        """Monthly usage summary"""
         monthly_data = {
             "year": year,
             "month": month,
@@ -145,7 +145,7 @@ class UsageTracker:
         return monthly_data
     
     def clear_history(self):
-        """사용 기록 초기화"""
+        """Clear usage history"""
         self.data = {
             "total_files": 0,
             "total_cost_usd": 0.0,
