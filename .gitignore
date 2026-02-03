@@ -131,7 +131,15 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Google Cloud credentials (보안 중요!)
 .credentials.json
+credentials.json
+*credentials*.json
+
+# API usage history (개인 정보 포함)
+usage_history.json
+*_history.json
 
 # Spyder project settings
 .spyderproject
@@ -192,7 +200,15 @@ pyrightconfig.json
 # Ignore all local history of files
 .history
 .ionide
-docs
-output
+
+# Project specific (보안 중요!)
+docs/
+output/
+*.pdf
+
+credentials.json 
+usage_history.json
+.credentials.json 
+.usage_history.json
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python
