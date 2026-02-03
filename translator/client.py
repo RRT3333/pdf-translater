@@ -1,12 +1,12 @@
 """Google Cloud Translation API 클라이언트"""
 
 import os
-from google.cloud import translate_v2 as translate
-from typing import List, Dict
+from google.cloud import translate_v3 as translate
+from typing import Dict
 
 
 class TranslationClient:
-    """Google Cloud Translation API 클라이언트 래퍼"""
+    """Google Cloud Translation API v3 클라이언트 래퍼 (Document Translation)"""
     
     def __init__(self, project_id: str = None):
         """
@@ -16,78 +16,62 @@ class TranslationClient:
             project_id: Google Cloud 프로젝트 ID
         """
         self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT")
-        self.client = translate.Client()
-    
-    def translate_text(
-        self, 
-        text: str, 
-        target_language: str = "ko", 
-        source_language: str = "ja"
-    ) -> str:
-        """
-        텍스트 번역
+        if not self.project_id:
+            raise ValueError("GOOGLE_CLOUD_PROJECT 환경 변수가 설정되지 않았습니다.")
         
-        Args:
-            text: 번역할 텍스트
-            target_language: 도착어 코드
-            source_language: 출발어 코드
-            
-        Returns:
-            번역된 텍스트
-        """
-        if not text or not text.strip():
-            return text
-        
-        try:
-            result = self.client.translate(
-                text,
-                target_language=target_language,
-                source_language=source_language
-            )
-            return result["translatedText"]
-        except Exception as e:
-            raise Exception(f"번역 중 오류 발생: {str(e)}")
+        self.client = translate.TranslationServiceClient()
+        self.location = "us-central1"  # 또는 "global"
+        self.parent = f"projects/{self.project_id}/locations/{self.location}"
     
-    def translate_batch(
+    def translate_document(
         self,
-        texts: List[str],
+        file_path: str,
         target_language: str = "ko",
-        source_language: str = "ja"
-    ) -> List[str]:
+        source_language: str = "ja",
+        mime_type: str = "application/pdf"
+    ) -> Dict:
         """
-        여러 텍스트를 일괄 번역
+        문서 파일 번역 (PDF, DOCX 등)
         
         Args:
-            texts: 번역할 텍스트 리스트
+            file_path: 번역할 파일 경로
             target_language: 도착어 코드
-            source_language: 출발어 코드
+            source_language: 출발어 코드 (옵션, 자동 감지 가능)
+            mime_type: 파일 MIME 타입
             
         Returns:
-            번역된 텍스트 리스트
+            번역된 문서 정보 딕셔너리 (document_content, mime_type)
         """
-        if not texts:
-            return []
-        
         try:
-            results = self.client.translate(
-                texts,
-                target_language=target_language,
-                source_language=source_language
-            )
+            # 파일 읽기
+            with open(file_path, "rb") as f:
+                document_content = f.read()
             
-            if isinstance(results, list):
-                return [r["translatedText"] for r in results]
-            else:
-                return [results["translatedText"]]
+            # 문서 입력 설정
+            document_input_config = {
+                "content": document_content,
+                "mime_type": mime_type,
+            }
+            
+            # 번역 요청
+            request = {
+                "parent": self.parent,
+                "target_language_code": target_language,
+                "document_input_config": document_input_config,
+            }
+            
+            # source_language가 지정된 경우에만 추가 (자동 감지도 가능)
+            if source_language:
+                request["source_language_code"] = source_language
+            
+            # API 호출
+            response = self.client.translate_document(request=request)
+            
+            return {
+                "document_content": response.document_translation.byte_stream_outputs[0],
+                "mime_type": response.document_translation.mime_type,
+                "detected_language": getattr(response, "detected_language_code", source_language)
+            }
+            
         except Exception as e:
-            raise Exception(f"일괄 번역 중 오류 발생: {str(e)}")
-    
-    def get_supported_languages(self) -> List[Dict[str, str]]:
-        """
-        지원하는 언어 목록 조회
-        
-        Returns:
-            언어 코드와 이름 딕셔너리 리스트
-        """
-        results = self.client.get_languages()
-        return [{"code": lang["language"], "name": lang.get("name", "")} for lang in results]
+            raise Exception(f"문서 번역 중 오류 발생: {str(e)}")
