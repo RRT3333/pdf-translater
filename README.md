@@ -83,9 +83,10 @@ python translate.py -i ./english.pdf -s en -t ko
 |--------|-------|----------|---------|-------------|
 | `--input` | `-i` | Y | - | Input PDF file or folder path |
 | `--output` | `-o` | N | `./output` | Output folder path |
-| `--source` | `-s` | N | `ja` | Source language code (ja, en, ko, etc.) |
+| `--source` | `-s` | N | `ja` | Source language code |
 | `--target` | `-t` | N | `ko` | Target language code |
-| `--batch` | `-b` | N | `False` | Batch processing mode |
+| `--batch` | `-b` | N | `False` | Batch processing mode for folders |
+| `--recursive` | `-r` | N | `False` | Recursive processing including subfolders (preserves folder structure) |
 
 ### Supported Language Codes
 
@@ -176,7 +177,10 @@ pdf-translator/
 ├── translator/
 │   ├── __init__.py          # Package initialization
 │   ├── client.py            # Google Cloud Translation client
-│   ├── utils.py             # PDF processing utilities
+│   ├── config.py            # Configuration constants
+│   ├── service.py           # Translation orchestration layer
+│   ├── validators.py        # Input validation functions
+│   ├── utils.py             # Utility functions
 │   └── usage.py             # Usage tracking
 ├── requirements.txt         # Python package dependencies
 ├── .env.example            # Environment variable template

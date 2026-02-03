@@ -83,9 +83,10 @@ python translate.py -i ./english.pdf -s en -t ko
 |------|------|------|--------|------|
 | `--input` | `-i` | Y | - | 입력 PDF 파일 또는 폴더 경로 |
 | `--output` | `-o` | N | `./output` | 출력 폴더 경로 |
-| `--source` | `-s` | N | `ja` | 출발어 코드 (ja, en, ko 등) |
+| `--source` | `-s` | N | `ja` | 출발어 코드 |
 | `--target` | `-t` | N | `ko` | 도착어 코드 |
 | `--batch` | `-b` | N | `False` | 폴더 일괄 처리 모드 |
+| `--recursive` | `-r` | N | `False` | 하위 폴더 포함 재귀 처리 (폴더 구조 유지) |
 
 ### 지원 언어 코드
 
@@ -176,7 +177,10 @@ pdf-translator/
 ├── translator/
 │   ├── __init__.py          # 패키지 초기화
 │   ├── client.py            # Google Cloud Translation 클라이언트
-│   ├── utils.py             # PDF 처리 유틸리티
+│   ├── config.py            # 설정 상수
+│   ├── service.py           # 번역 오케스트레이션 레이어
+│   ├── validators.py        # 입력 검증 함수
+│   ├── utils.py             # 유틸리티 함수
 │   └── usage.py             # 사용 현황 추적
 ├── requirements.txt         # Python 패키지 의존성
 ├── .env.example            # 환경 변수 템플릿
