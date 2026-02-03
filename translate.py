@@ -10,7 +10,7 @@ from typing import List
 from datetime import datetime
 
 from translator import TranslationClient, save_translated_document, UsageTracker
-from translator.utils import get_pdf_files, format_file_size
+from translator.utils import get_pdf_files, get_pdf_files_recursive, get_output_path_with_structure, format_file_size
 
 # .env 파일 로드
 load_dotenv()
@@ -41,16 +41,18 @@ def validate_credentials():
 
 def translate_single_file(
     input_path: str,
-    output_dir: str,
+    output_path: str,
     source_lang: str,
     target_lang: str,
     client: TranslationClient,
-    tracker: UsageTracker = None
+    tracker: UsageTracker = None,
+    show_relative_path: str = None
 ):
     """단일 PDF 파일 번역 (Document Translation 사용)"""
     try:
         filename = os.path.basename(input_path)
-        click.echo(f"\n📄 {filename}")
+        display_path = show_relative_path if show_relative_path else filename
+        click.echo(f"\n📄 {display_path}")
         
         file_size = os.path.getsize(input_path)
         click.echo(f"   📊 파일 크기: {format_file_size(file_size)}")
@@ -71,11 +73,6 @@ def translate_single_file(
         )
         
         click.echo(" ✓")
-        
-        # 출력 파일명 생성
-        name_without_ext = os.path.splitext(filename)[0]
-        output_filename = f"{name_without_ext}_{target_lang}.pdf"
-        output_path = os.path.join(output_dir, output_filename)
         
         # 번역된 PDF 저장
         click.echo("   💾 파일 저장 중...", nl=False)
@@ -132,7 +129,12 @@ def translate_single_file(
     is_flag=True,
     help='폴더 일괄 처리 모드'
 )
-def cli(ctx, input, output, source, target, batch):
+@click.option(
+    '--recursive', '-r',
+    is_flag=True,
+    help='하위 폴더 포함 재귀 처리 (폴더 구조 유지)'
+)
+def cli(ctx, input, output, source, target, batch, recursive):
     """PDF 번역 CLI 프로그램 (Google Cloud Translation API v3 Document Translation)
     
     PDF 문서를 통째로 번역합니다. 레이아웃과 포맷을 유지하며, 텍스트 추출 없이 문서 자체를 번역합니다.
@@ -144,6 +146,9 @@ def cli(ctx, input, output, source, target, batch):
         
         # 폴더 일괄 번역
         python translate.py -i ./docs/ -o ./output/ --batch
+        
+        # 하위 폴더 포함 재귀 번역 (폴더 구조 유지)
+        python translate.py -i ./docs/ -o ./output/ --recursive
         
         # 언어 지정
         python translate.py -i ./docs/ -s en -t ko --batch
@@ -163,7 +168,7 @@ def cli(ctx, input, output, source, target, batch):
             click.echo("사용법: python translate.py --help", err=True)
             sys.exit(1)
         
-        ctx.invoke(translate_command, input=input, output=output, source=source, target=target, batch=batch)
+        ctx.invoke(translate_command, input=input, output=output, source=source, target=target, batch=batch, recursive=recursive)
 
 
 @cli.command(name='translate', hidden=True)
@@ -172,7 +177,8 @@ def cli(ctx, input, output, source, target, batch):
 @click.option('--source', '-s', default='ja')
 @click.option('--target', '-t', default='ko')
 @click.option('--batch', '-b', is_flag=True)
-def translate_command(input: str, output: str, source: str, target: str, batch: bool):
+@click.option('--recursive', '-r', is_flag=True)
+def translate_command(input: str, output: str, source: str, target: str, batch: bool, recursive: bool):
     """PDF 번역 CLI 프로그램 (Google Cloud Translation API v3 Document Translation)
     
     PDF 문서를 통째로 번역합니다. 레이아웃과 포맷을 유지하며, 텍스트 추출 없이 문서 자체를 번역합니다.
@@ -205,7 +211,23 @@ def translate_command(input: str, output: str, source: str, target: str, batch: 
         sys.exit(1)
     
     # 입력 파일 목록 가져오기
-    if batch or os.path.isdir(input):
+    if recursive:
+        # 재귀 모드: 하위 폴더 포함, 폴더 구조 유지
+        if not os.path.isdir(input):
+            click.echo("❌ 오류: --recursive 옵션은 폴더 경로와 함께 사용해야 합니다.", err=True)
+            sys.exit(1)
+        
+        pdf_files_with_rel = get_pdf_files_recursive(input)
+        if not pdf_files_with_rel:
+            click.echo(f"❌ 오류: {input} 폴더에 PDF 파일이 없습니다.", err=True)
+            sys.exit(1)
+        
+        pdf_files = [abs_path for abs_path, rel_path in pdf_files_with_rel]
+        is_recursive_mode = True
+        input_base_dir = input
+        
+    elif batch or os.path.isdir(input):
+        # 배치 모드: 현재 폴더만
         if not os.path.isdir(input):
             click.echo("❌ 오류: --batch 옵션은 폴더 경로와 함께 사용해야 합니다.", err=True)
             sys.exit(1)
@@ -213,11 +235,17 @@ def translate_command(input: str, output: str, source: str, target: str, batch: 
         if not pdf_files:
             click.echo(f"❌ 오류: {input} 폴더에 PDF 파일이 없습니다.", err=True)
             sys.exit(1)
+        is_recursive_mode = False
+        input_base_dir = None
+        
     else:
+        # 단일 파일 모드
         if not input.lower().endswith('.pdf'):
             click.echo("❌ 오류: PDF 파일만 지원합니다.", err=True)
             sys.exit(1)
         pdf_files = [input]
+        is_recursive_mode = False
+        input_base_dir = None
     
     # 언어 이름 매핑
     lang_names = {
@@ -239,6 +267,8 @@ def translate_command(input: str, output: str, source: str, target: str, batch: 
     click.echo("="*60)
     click.echo(f"📁 입력: {input} ({len(pdf_files)}개 파일)")
     click.echo(f"📂 출력: {output}")
+    if is_recursive_mode:
+        click.echo("🔄 모드: 재귀 (폴더 구조 유지)")
     click.echo(f"🌐 번역: {source_name} → {target_name}")
     click.echo("="*60)
     
@@ -252,8 +282,24 @@ def translate_command(input: str, output: str, source: str, target: str, batch: 
     
     for idx, pdf_file in enumerate(pdf_files, 1):
         click.echo(f"\n[{idx}/{len(pdf_files)}]", nl=False)
+        
+        # 출력 경로 결정
+        if is_recursive_mode:
+            # 재귀 모드: 폴더 구조 유지
+            output_path = get_output_path_with_structure(
+                pdf_file, input_base_dir, output, target
+            )
+            rel_path = os.path.relpath(pdf_file, input_base_dir)
+        else:
+            # 일반 모드: 출력 폴더에 직접 저장
+            filename = os.path.basename(pdf_file)
+            name_without_ext = os.path.splitext(filename)[0]
+            output_filename = f"{name_without_ext}_{target}.pdf"
+            output_path = os.path.join(output, output_filename)
+            rel_path = None
+        
         success, files, file_size = translate_single_file(
-            pdf_file, output, source, target, client, tracker
+            pdf_file, output_path, source, target, client, tracker, rel_path
         )
         if success:
             success_count += 1
