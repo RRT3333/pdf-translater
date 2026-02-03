@@ -131,6 +131,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.credentials.json
 
 # Spyder project settings
 .spyderproject
@@ -191,5 +192,7 @@ pyrightconfig.json
 # Ignore all local history of files
 .history
 .ionide
+docs
+output
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python
